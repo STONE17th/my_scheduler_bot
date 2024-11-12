@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher
 
 from handlers import all_routers
 
-bot = Bot(os.getenv('TOKEN'))
+bot = Bot(os.getenv('BOT_TOKEN'))
 dp = Dispatcher()
 
 dp.include_router(all_routers)
