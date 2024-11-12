@@ -1,6 +1,6 @@
 FROM python:slim
 
-WORKDIR /code
+WORKDIR /my_scheduler_bot
 
 RUN apt-get update && apt-get install -y git
 RUN git clone https://github.com/STONE17th/my_scheduler_bot.git
