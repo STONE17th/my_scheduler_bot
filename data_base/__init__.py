@@ -1,4 +1,4 @@
-from .schedule import DataBase
+from .base import DataBase
 
 __all__ = [
     'DataBase',
