@@ -7,3 +7,4 @@ class CallBackData(CallbackData, prefix='CBD'):
     year: int = 0
     month: int = 0
     day: int = 0
+    task_id: int = 0

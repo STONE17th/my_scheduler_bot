@@ -1,40 +1,59 @@
 from aiogram import Bot, Router, F
 from aiogram.types import Message
-from aiogram.filters import CommandStart, CommandObject
+from aiogram.filters import Command, CommandStart, CommandObject
 
 from datetime import datetime
 
-from data_base import Schedule
+from data_base import DataBase
 from keyboards import ikb_current_month
 
 command_router = Router()
 
 
-@command_router.message(CommandStart)
-async def command_start(message: Message, command: CommandObject):
-    print(command.args)
-    # msg = message.text.split()
-    # if len(msg) == 2 and msg[1].isdigit():
-    #     user_tg_id = int(msg[1])
-    # else:
-    #     user_tg_id = message.from_user.id
-    # Schedule().create_user_table(message.from_user.id)
-    # today_date = datetime.now()
-    # year = today_date.year
-    # month = today_date.month
-    # await message.answer(
-    #     message.text,
-    #     reply_markup=ikb_current_month(
-    #         user_tg_id,
-    #         year,
-    #         month,
-    #     )
-    # )
+@command_router.message(Command('start'))
+async def command_start(message: Message):
+    today_date = datetime.now()
+    year, month = today_date.year, today_date.month
+    msg = f'Приветствую, {message.from_user.full_name}!'
+    user_tg_id = message.from_user.id
+    if message.forward_origin:
+        user_tg_id = message.forward_origin.sender_user.id
+        msg += f'''\nСохрани ссылку для быстрого перехода:
+        https://t.me/stone_scheduler_bot?start={message.forward_origin.sender_user.id}'''
+    if message.text != '/start' and message.text.split()[-1].isdigit():
+        user_tg_id = int(message.text.split()[-1])
+    msg += '\nВыбери день:'
+    DataBase().create_user_table(user_tg_id)
+    await message.answer(
+        text=msg,
+        reply_markup=ikb_current_month(
+            user_tg_id,
+            year,
+            month,
+        )
+    )
 
 
-# @command_router.message(Command('del'))
-# async def command_start(message: Message):
-#     Schedule().del_task(message.from_user.id, 1)
-#     await message.answer(
-#         'Удалено'
-#     )
+@command_router.message(F.forward_origin)
+async def forward_handler(message: Message, bot: Bot):
+    await bot.delete_message(
+        chat_id=message.from_user.id,
+        message_id=message.message_id,
+    )
+    await command_start(message)
+
+
+@command_router.message(Command('load'))
+async def add_task(message: Message, bot: Bot, command: CommandObject):
+    with open(command.args, 'r', encoding='utf-8') as file:
+        data = list(map(lambda x: x.strip().split(' - '), file.readlines()))
+    for row in data:
+        day, month, year = map(int, row[0].split('.'))
+        DataBase().add_task(message.from_user.id, year, month, day, row[1], row[2])
+
+
+@command_router.message(Command('count'))
+async def count_tasks(message: Message, bot: Bot, command: CommandObject):
+    year, month, text = command.args.split(' ', 2)
+    tasks = DataBase().count_tasks(message.from_user.id, int(year), int(month))
+    await message.answer(str(len([task for task in tasks if text.lower() in task[-1].lower()])))

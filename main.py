@@ -3,16 +3,29 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 
+from data_base import DataBase
+from fsm import fsm_router
 from handlers import all_routers
 
 bot = Bot(os.getenv('BOT_TOKEN'))
 dp = Dispatcher()
 
-dp.include_router(all_routers)
+dp.include_routers(
+    fsm_router,
+    all_routers,
+)
 
 
 def on_start():
     print('Bot is started...')
+    print('Connect to DataBase:', end=' ')
+    try:
+        DataBase().create_main_table()
+        print('OK!')
+    except Exception as e:
+        print('Failure...')
+        print(e)
+        on_shutdown()
 
 
 def on_shutdown():

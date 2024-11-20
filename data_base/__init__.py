@@ -1,5 +1,5 @@
-from .schedule import Schedule
+from .schedule import DataBase
 
 __all__ = [
-    'Schedule',
+    'DataBase',
 ]
