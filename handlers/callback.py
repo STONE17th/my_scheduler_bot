@@ -48,8 +48,7 @@ async def select_day(callback: CallbackQuery, callback_data: CallBackData, bot: 
 async def target_day(callback: CallbackQuery, callback_data: CallBackData, bot: Bot):
     user_tg_id, year, month, day, task = cb_adapter(callback_data)
     tasks = sorted(DataBase().get_day(user_tg_id, year, month, day), key=lambda x: list(map(int, x[-2].split(':'))))
-    message_title = f'{day} {Month.months[int(month)]} {year}'
-    message_list = []
+    message_list = [f'{day} {Month.months[int(month)]} {year}']
     free_day = True
     if tasks:
         for task_id, task_year, task_month, task_day, task_time, task_desc in tasks:
@@ -60,7 +59,6 @@ async def target_day(callback: CallbackQuery, callback_data: CallBackData, bot: 
         message_list.append('В этот день мероприятий нет')
     caption = as_list(
         as_marked_section(
-            message_title,
             *message_list,
             marker='\t⊳ ',
         )

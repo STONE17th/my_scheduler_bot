@@ -61,17 +61,9 @@ class DataBase:
             )'''
         self.execute(sql, commit=True)
 
-    # def is_exists(self, user_tg_id: int) -> bool:
-    #     sql = 'SELECT * FROM table_admins WHERE user_tg_id=%s'
-    #     return bool(self.execute(sql, (user_tg_id,), fetchone=True))
-
     def add_task(self, user_tg_id: int, year: int, month: int, day: int, time: str, desc: str):
         sql = f'INSERT INTO table_{user_tg_id} (year, month, day, time, description) VALUES (%s, %s, %s, %s, %s)'
         self.execute(sql, (year, month, day, time, desc), commit=True)
-
-    # def get_task(self, user_tg_id: int, task_id: int):
-    #     sql = f'SELECT * FROM table_{user_tg_id} WHERE task_id=%s'
-    #     self.execute(sql, (task_id,), commit=True)
 
     def get_day(self, user_tg_id: int, year: int, month: int, day: int):
         sql = f'SELECT * FROM table_{user_tg_id} WHERE year=%s AND month=%s AND day=%s'
@@ -86,7 +78,8 @@ class DataBase:
         self.execute(sql, (task_id,), commit=True)
 
     def add_scheduler(self, user_tg_id: int, scheduler_tg_id: int, scheduler_title: str):
-        sql = f'''INSERT INTO table_admins (user_tg_id, scheduler_tg_id, scheduler_title) VALUES (%s, %s, %s) ON CONFLICT (user_tg_id, scheduler_tg_id) DO NOTHING'''
+        sql = f'''INSERT INTO table_admins (user_tg_id, scheduler_tg_id, scheduler_title) VALUES 
+            (%s, %s, %s) ON CONFLICT (user_tg_id, scheduler_tg_id) DO NOTHING'''
         return self.execute(sql, (user_tg_id, scheduler_tg_id, scheduler_title), commit=True)
 
     def load_schedulers(self, user_tg_id: int):
