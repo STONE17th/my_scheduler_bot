@@ -1,17 +1,14 @@
 import psycopg2
 
-IP_ADDRESS = '193.104.57.152'
-DB_NAME = 'scheduler_bot_db'
-USER_NAME = 'stone17th'
-PASSWORD = 'SchedulerBotDB17th'
+import os
 
 
 class DataBase:
     _instance = None
-    _ip_address = IP_ADDRESS
-    _db_name = DB_NAME
-    _user_name = USER_NAME
-    _password = PASSWORD
+    _ip_address = os.getenv('IP_ADDRESS')
+    _db_name = os.getenv('DB_NAME')
+    _user_name = os.getenv('USER_NAME')
+    _password = os.getenv('PASSWORD')
 
     def __new__(cls):
         if cls._instance is None:
