@@ -1,17 +1,21 @@
 from aiogram import Bot, Router, F
 from aiogram.types import Message
-from aiogram.filters import Command, CommandStart, CommandObject
+from aiogram.filters import Command, CommandObject
+from aiogram.fsm.context import FSMContext
 
 from datetime import datetime
 
 from data_base import DataBase
 from keyboards import ikb_current_month
+from fsm.states import CallbackState
 
 command_router = Router()
 
 
 @command_router.message(Command('start'))
-async def command_start(message: Message):
+@command_router.message(Command('start'), CallbackState.input_data)
+async def command_start(message: Message, state: FSMContext):
+    await state.clear()
     today_date = datetime.now()
     year, month = today_date.year, today_date.month
     msg = f'Приветствую, {message.from_user.full_name}!'

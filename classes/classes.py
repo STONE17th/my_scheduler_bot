@@ -1,3 +1,5 @@
+from aiogram.utils.formatting import as_list, as_marked_section
+
 from datetime import datetime
 
 from dataclasses import dataclass
@@ -32,7 +34,8 @@ class Day:
     year: int
     month: int
     day: int
-    is_busy: bool
+    _is_busy: bool = False
+    _tasks: list[Task] | None = None
     emoji_digits = {digit: emoji for digit, emoji in
                     zip(list('0123456789'), ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'])}
 
@@ -41,8 +44,18 @@ class Day:
         return cls(0, 0, 0, 0, False)
 
     @property
+    def is_busy(self):
+        return bool(self._tasks)
+
+    @property
     def is_blank(self) -> bool:
         return not bool(self.day)
+
+    @property
+    def tasks(self):
+        if self._tasks is None:
+            self._tasks = [Task(*task) for task in DataBase().get_day(self.user_tg_id, self.year, self.month, self.day)]
+        return self._tasks
 
     def _emoji_digits(self) -> str:
         return ''.join([self.emoji_digits[digit] for digit in str(self.day)])
@@ -50,6 +63,22 @@ class Day:
     @property
     def to_str(self):
         return self._emoji_digits() if self.is_busy else str(self.day)
+
+    def tasks_caption(self, marker: str) -> as_list():
+        message_list = [f'{self.day} {Month.months[int(self.month)]} {self.year}']
+        if tasks := self.tasks:
+            for task in sorted(tasks, key=lambda x: x.time):
+                msg = f'\t{task.time} - {task.description}'
+                message_list.append(msg)
+        else:
+            message_list.append('В этот день мероприятий нет')
+        caption = as_list(
+            as_marked_section(
+                *message_list,
+                marker=f'\t{marker} ',
+            )
+        )
+        return caption
 
 
 class Month:
