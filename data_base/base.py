@@ -70,7 +70,7 @@ class DataBase:
         return self.execute(sql, (year, month, day), fetchall=True)
 
     def get_month(self, user_tg_id: int, year: int, month: int):
-        sql = f'SELECT * FROM table_{user_tg_id} WHERE year=%s AND month=%s'
+        sql = f'SELECT day FROM table_{user_tg_id} WHERE year=%s AND month=%s'
         return self.execute(sql, (year, month), fetchall=True)
 
     def del_task(self, user_tg_id: int, task_id: int):

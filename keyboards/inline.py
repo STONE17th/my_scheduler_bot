@@ -1,6 +1,6 @@
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from classes import Month, Day
+from classes import Month, Day, Task
 from data_base import DataBase
 from .callback_data import CallBackData
 
@@ -81,23 +81,23 @@ def ikb_select_month(user_tg_id: int, year: int, month: int):
     return keyboard.as_markup()
 
 
-def ikb_day_button(user_tg_id: int, year: int, month: int, day: int, free_day: bool = False, admin: bool = False):
+def ikb_day_button(day: Day, admin: bool = False):
     keyboard = InlineKeyboardBuilder()
-    c_month = Month(year, month)
+    c_month = Month(day.year, day.month)
     keyboard.button(
         text='⇦⇦⇦',
         callback_data=CallBackData(
             button='target_day',
-            user_tg_id=user_tg_id,
-            **c_month.previous_day(day),
+            user_tg_id=day.user_tg_id,
+            **c_month.previous_day(day.day),
         )
     )
     keyboard.button(
         text='⇨⇨⇨',
         callback_data=CallBackData(
             button='target_day',
-            user_tg_id=user_tg_id,
-            **c_month.next_day(day),
+            user_tg_id=day.user_tg_id,
+            **c_month.next_day(day.day),
         )
     )
     if admin:
@@ -105,28 +105,28 @@ def ikb_day_button(user_tg_id: int, year: int, month: int, day: int, free_day: b
             text='Добавить',
             callback_data=CallBackData(
                 button='add_task',
-                user_tg_id=user_tg_id,
-                **c_month.as_dict(day),
+                user_tg_id=day.user_tg_id,
+                **c_month.as_dict(day.day),
             )
         )
-        if not free_day:
+        if day.tasks:
             keyboard.button(
                 text='Удалить',
                 callback_data=CallBackData(
                     button='delete_tasks',
-                    user_tg_id=user_tg_id,
-                    **c_month.as_dict(day),
+                    user_tg_id=day.user_tg_id,
+                    **c_month.as_dict(day.day),
                 )
             )
     keyboard.button(
         text='Назад',
         callback_data=CallBackData(
             button='select_month',
-            user_tg_id=user_tg_id,
-            **c_month.as_dict(day),
+            user_tg_id=day.user_tg_id,
+            **c_month.as_dict(day.day),
         )
     )
-    keyboard.adjust(2, 2, 1)
+    keyboard.adjust(2, 2 if day.tasks else 1, 1)
     return keyboard.as_markup()
 
 
@@ -148,16 +148,15 @@ def ikb_cancel(user_tg_id: int, year: int, month: int, day: int):
 def ikb_list_delete_tasks(user_tg_id: int, year: int, month: int, day: int):
     keyboard = InlineKeyboardBuilder()
     c_month = Month(year, month)
-    response_db = DataBase().get_day(user_tg_id, year, month, day)
-    for task in response_db:
-        task_id, *_, task_time, _ = task
+    tasks = [Task(*task) for task in DataBase().get_day(user_tg_id, year, month, day)]
+    for task in sorted(tasks, key=lambda task: task.time):
         keyboard.button(
-            text=task_time,
+            text=task.time,
             callback_data=CallBackData(
                 button='delete_task',
                 user_tg_id=user_tg_id,
                 **c_month.as_dict(day),
-                task_id=task_id,
+                task_id=task.id,
             )
         )
     keyboard.button(
@@ -168,6 +167,11 @@ def ikb_list_delete_tasks(user_tg_id: int, year: int, month: int, day: int):
             **c_month.as_dict(day),
         )
     )
+    len_tasks = len(tasks)
+    row_tasks = [4] * (len_tasks // 4)
+    if row := len_tasks % 4:
+        row_tasks.append(row)
+    keyboard.adjust(*row_tasks, 1)
     return keyboard.as_markup()
 
 

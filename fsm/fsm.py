@@ -1,13 +1,11 @@
 from aiogram import Bot, Router, F
 from aiogram.types import Message, CallbackQuery
-from aiogram.utils.formatting import as_list, as_marked_section
 from aiogram.fsm.context import FSMContext
 
-from classes import Month, Day, Task
+from classes import Month, Day
 from data_base import DataBase
 from handlers.callback import target_day
-from handlers.callback import send_tasks_message
-from keyboards import CallBackData, ikb_cancel, ikb_day_button, ikb_list_delete_tasks
+from keyboards import CallBackData, ikb_cancel, ikb_day_button
 from .states import CallbackState
 
 router = Router()
@@ -55,45 +53,18 @@ async def new_task_input(message: Message, state: FSMContext, bot: Bot) -> None:
             'message_id']
         DataBase().add_task(user_tg_id, year, month, day, time, desc)
         t_day = Day(user_tg_id, year, month, day)
-        await send_tasks_message(
-            user_tg_id=user_tg_id,
-            t_day=t_day,
-            bot=bot,
-            message_chat_id=message.from_user.id,
+        await bot.edit_message_text(
+            **t_day.tasks_caption('⊳').as_kwargs(),
+            chat_id=message.chat.id,
             message_id=message_id,
-            user_id=message.from_user.id,
-
+            reply_markup=ikb_day_button(
+                t_day,
+                message.from_user.id == user_tg_id,
+            ),
         )
-        # tasks = sorted([Task(*task) for task in DataBase().get_day(user_tg_id, year, month, day)], key=lambda x: x.time)
-        #
-        # message_text = [f'{day} {Month.months[int(month)]} {year}']
-        # free_day = True
-        # if tasks:
-        #     for task in tasks:
-        #         message_text.append(f'{task.time} - {task.description}')
-        #         free_day = False
-        # else:
-        #     message_text.append('В этот день мероприятий нет')
-        # caption = as_list(
-        #     as_marked_section(
-        #         *message_text,
-        #         marker='\t⊳ ',
-        #     )
-        # )
-        # await bot.edit_message_text(
-        #     **caption.as_kwargs(),
-        #     chat_id=message.from_user.id,
-        #     message_id=message_id,
-        #     reply_markup=ikb_day_button(
-        #         user_tg_id=user_tg_id,
-        #         **Month(year, month).as_dict(day),
-        #         free_day=free_day,
-        #         admin=message.from_user.id == user_tg_id,
-        #     ),
-        # )
-        # await state.clear()
 
 
+@router.callback_query(CallBackData.filter(F.button == 'cancel'))
 @router.callback_query(CallbackState.input_data, CallBackData.filter(F.button == 'cancel'))
 async def cancel_handler(callback: CallbackQuery, callback_data: CallBackData, state: FSMContext, bot: Bot) -> None:
     await state.clear()

@@ -34,7 +34,7 @@ class Day:
     year: int
     month: int
     day: int
-    _is_busy: bool = False
+    is_busy: bool = False
     _tasks: list[Task] | None = None
     emoji_digits = {digit: emoji for digit, emoji in
                     zip(list('0123456789'), ['0️⃣', '1️⃣', '2️⃣', '3️⃣', '4️⃣', '5️⃣', '6️⃣', '7️⃣', '8️⃣', '9️⃣'])}
@@ -42,10 +42,6 @@ class Day:
     @classmethod
     def blank_day(cls):
         return cls(0, 0, 0, 0, False)
-
-    @property
-    def is_busy(self):
-        return bool(self._tasks)
 
     @property
     def is_blank(self) -> bool:
@@ -64,7 +60,7 @@ class Day:
     def to_str(self):
         return self._emoji_digits() if self.is_busy else str(self.day)
 
-    def tasks_caption(self, marker: str) -> as_list():
+    def tasks_caption(self, marker: str):
         message_list = [f'{self.day} {Month.months[int(self.month)]} {self.year}']
         if tasks := self.tasks:
             for task in sorted(tasks, key=lambda x: x.time):
@@ -171,7 +167,7 @@ class Month:
         return {'year': self.year + 1, 'month': 1}
 
     def month_calendar(self, user_tg_id: int) -> tuple[str, list[list[Day]]]:
-        user_days = {day for *_, day, _, _ in DataBase().get_month(user_tg_id, self.year, self.month)}
+        user_days = {day[0] for day in DataBase().get_month(user_tg_id, self.year, self.month)}
         calendar = []
         week = [Day.blank_day()] * self._first_day
         for day_number in range(1, self._day_amount() + 1):
