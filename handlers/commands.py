@@ -3,21 +3,20 @@ from aiogram.types import Message
 from aiogram.filters import Command, CommandObject
 from aiogram.fsm.context import FSMContext
 
-from datetime import datetime
-
 from data_base import DataBase
-from keyboards import ikb_current_month
 from fsm.states import CallbackState
+from middlewares import DateMiddleware
+from keyboards import ikb_current_month
 
 command_router = Router()
+
+command_router.message.middleware(DateMiddleware())
 
 
 @command_router.message(Command('start'))
 @command_router.message(Command('start'), CallbackState.input_data)
-async def command_start(message: Message, state: FSMContext):
+async def command_start(message: Message, state: FSMContext, current_year: int, current_month: int):
     await state.clear()
-    today_date = datetime.now()
-    year, month = today_date.year, today_date.month
     msg = f'Приветствую, {message.from_user.full_name}!'
     user_tg_id = message.from_user.id
     if message.forward_origin:
@@ -32,8 +31,8 @@ async def command_start(message: Message, state: FSMContext):
         text=msg,
         reply_markup=ikb_current_month(
             user_tg_id,
-            year,
-            month,
+            current_year,
+            current_month,
         )
     )
 

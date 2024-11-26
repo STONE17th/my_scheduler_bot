@@ -28,18 +28,19 @@ def _validate_task(message_data: str) -> tuple[str, str] | bool:
 
 @router.callback_query(CallBackData.filter(F.button == 'add_task'))
 async def add_task_input(callback: CallbackQuery, callback_data: CallBackData, state: FSMContext, bot: Bot) -> None:
-    user_tg_id, year, month, day = callback_data.user_tg_id, callback_data.year, callback_data.month, callback_data.day
+    day = Day.from_callback_data(callback_data)
     await state.set_state(CallbackState.input_data)
     await state.update_data(
-        user_tg_id=user_tg_id,
-        **Month(year, month).as_dict(day),
+        **day.as_dict,
         message_id=callback.message.message_id,
     )
     await bot.edit_message_text(
-        f'{day} {Month.months[month]} {year}\nВведите время и описание мероприятия:',
+        f'{day.day} {Month.months[day.month]} {day.year}\nВведите время и описание мероприятия:',
         chat_id=callback.message.chat.id,
         message_id=callback.message.message_id,
-        reply_markup=ikb_cancel(user_tg_id, year, month, day)
+        reply_markup=ikb_cancel(
+            target_day=day,
+        )
     )
 
 
@@ -52,14 +53,14 @@ async def new_task_input(message: Message, state: FSMContext, bot: Bot) -> None:
         user_tg_id, year, month, day, message_id = data['user_tg_id'], data['year'], data['month'], data['day'], data[
             'message_id']
         DataBase().add_task(user_tg_id, year, month, day, time, desc)
-        t_day = Day(user_tg_id, year, month, day)
+        day = Day(user_tg_id, year, month, day)
         await bot.edit_message_text(
-            **t_day.tasks_caption('⊳').as_kwargs(),
+            **day.tasks_caption(marker='⊳'),
             chat_id=message.chat.id,
             message_id=message_id,
             reply_markup=ikb_day_button(
-                t_day,
-                message.from_user.id == user_tg_id,
+                target_day=day,
+                admin=message.from_user.id == user_tg_id,
             ),
         )
 

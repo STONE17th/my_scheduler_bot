@@ -43,6 +43,24 @@ class Day:
     def blank_day(cls):
         return cls(0, 0, 0, 0, False)
 
+    @classmethod
+    def from_callback_data(cls, callback_data):
+        return cls(
+            callback_data.user_tg_id,
+            callback_data.year,
+            callback_data.month,
+            callback_data.day,
+        )
+
+    @property
+    def as_dict(self) -> dict[str, int]:
+        return {
+            'user_tg_id': self.user_tg_id,
+            'year': self.year,
+            'month': self.month,
+            'day': self.day,
+        }
+
     @property
     def is_blank(self) -> bool:
         return not bool(self.day)
@@ -50,7 +68,8 @@ class Day:
     @property
     def tasks(self):
         if self._tasks is None:
-            self._tasks = [Task(*task) for task in DataBase().get_day(self.user_tg_id, self.year, self.month, self.day)]
+            self._tasks = [Task(*task) for task in
+                           DataBase().get_day(self.user_tg_id, self.year, self.month, self.day)]
         return self._tasks
 
     def _emoji_digits(self) -> str:
@@ -60,8 +79,10 @@ class Day:
     def to_str(self):
         return self._emoji_digits() if self.is_busy else str(self.day)
 
-    def tasks_caption(self, marker: str):
+    def tasks_caption(self, title: str | None = None, marker: str = '⊳'):
         message_list = [f'{self.day} {Month.months[int(self.month)]} {self.year}']
+        if title:
+            message_list[0] += f'\n{title}'
         if tasks := self.tasks:
             for task in sorted(tasks, key=lambda x: x.time):
                 msg = f'\t{task.time} - {task.description}'
@@ -74,7 +95,47 @@ class Day:
                 marker=f'\t{marker} ',
             )
         )
-        return caption
+        return caption.as_kwargs()
+
+    @property
+    def previous_day(self):
+        year, month = self.year, self.month
+        if self.day == Amount.MIN_MONTH.value:
+            if self.month == Amount.MIN_MONTH.value:
+                month = Amount.MAX_MONTH.value
+                day = Month(self.year, self.month).day_amount()
+                year -= 1
+            else:
+                month -= 1
+                day = Month(self.year, self.month).day_amount()
+        else:
+            day = self.day - 1
+        return {
+            'user_tg_id': self.user_tg_id,
+            'year': year,
+            'month': month,
+            'day': day,
+        }
+
+    @property
+    def next_day(self):
+        year, month = self.year, self.month
+        if self.day == Month(self.year, self.month).day_amount():
+            if self.month == Amount.MAX_MONTH.value:
+                day = Amount.MIN_DAY.value
+                month = Amount.MIN_MONTH.value
+                year += 1
+            else:
+                day = Amount.MIN_DAY.value
+                month += 1
+        else:
+            day = self.day + 1
+        return {
+            'user_tg_id': self.user_tg_id,
+            'year': year,
+            'month': month,
+            'day': day,
+        }
 
 
 class Month:
@@ -108,7 +169,7 @@ class Month:
     def _is_leap(self):
         return bool(not self.year % 4 and self.year % 100 or not self.year % 400)
 
-    def _day_amount(self, month: int = 0):
+    def day_amount(self, month: int = 0):
         months = {
             1: Amount.HIGH.value,
             2: Amount.FEB_HIGH.value if self._is_leap else Amount.FED_LOW.value,
@@ -128,34 +189,6 @@ class Month:
     def as_dict(self, day: int) -> dict[str, int]:
         return {'year': self.year, 'month': self.month, 'day': day}
 
-    def previous_day(self, target_day: int):
-        year, month = self.year, self.month
-        if target_day == Amount.MIN_MONTH.value:
-            if self.month == Amount.MIN_MONTH.value:
-                month = Amount.MAX_MONTH.value
-                day = self._day_amount(month)
-                year -= 1
-            else:
-                month -= 1
-                day = self._day_amount(month)
-        else:
-            day = target_day - 1
-        return {'year': year, 'month': month, 'day': day}
-
-    def next_day(self, target_day: int):
-        year, month = self.year, self.month
-        if target_day == self._day_amount():
-            if self.month == Amount.MAX_MONTH.value:
-                day = Amount.MIN_DAY.value
-                month = Amount.MIN_MONTH.value
-                year += 1
-            else:
-                day = Amount.MIN_DAY.value
-                month += 1
-        else:
-            day = target_day + 1
-        return {'year': year, 'month': month, 'day': day}
-
     def previous_month(self) -> dict[str, int]:
         if self.month != 1:
             return {'year': self.year, 'month': self.month - 1}
@@ -170,7 +203,7 @@ class Month:
         user_days = {day[0] for day in DataBase().get_month(user_tg_id, self.year, self.month)}
         calendar = []
         week = [Day.blank_day()] * self._first_day
-        for day_number in range(1, self._day_amount() + 1):
+        for day_number in range(1, self.day_amount() + 1):
             if len(week) >= 7:
                 calendar.append(week)
                 week = []
