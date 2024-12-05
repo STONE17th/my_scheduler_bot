@@ -5,7 +5,7 @@ from aiogram import Bot, Dispatcher
 
 from data_base import DataBase
 from fsm import fsm_router
-from handlers import all_routers
+from handlers import all_routers, all_messages_router
 
 bot = Bot(os.getenv('BOT_TOKEN'))
 dp = Dispatcher()
@@ -13,6 +13,7 @@ dp = Dispatcher()
 dp.include_routers(
     all_routers,
     fsm_router,
+    all_messages_router,
 )
 
 

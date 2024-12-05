@@ -10,6 +10,7 @@ from middlewares import DateMiddleware
 from keyboards import ikb_current_month, ikb_day_button
 
 command_router = Router()
+all_messages_router = Router()
 
 command_router.message.middleware(DateMiddleware())
 
@@ -63,7 +64,7 @@ async def count_tasks(message: Message, bot: Bot, command: CommandObject):
     await message.answer(str(len([task for task in tasks if text.lower() in task[-1].lower()])))
 
 
-@command_router.message()
+@all_messages_router.message()
 async def go_to_date(message: Message, bot: Bot, current_year: int, current_month: int):
     date = message.text.split()
     day, month, year = None, current_month, current_year
