@@ -11,8 +11,8 @@ bot = Bot(os.getenv('BOT_TOKEN'))
 dp = Dispatcher()
 
 dp.include_routers(
-    fsm_router,
     all_routers,
+    fsm_router,
 )
 
 

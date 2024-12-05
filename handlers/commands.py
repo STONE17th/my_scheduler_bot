@@ -15,7 +15,7 @@ command_router.message.middleware(DateMiddleware())
 
 
 @command_router.message(Command('start'))
-@command_router.message(Command('start'), CallbackState.input_data)
+@command_router.message(Command('start'), CallbackState())
 async def command_start(message: Message, state: FSMContext, current_year: int, current_month: int):
     await state.clear()
     msg = f'Приветствую, {message.from_user.full_name}!'
