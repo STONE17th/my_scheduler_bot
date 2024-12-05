@@ -63,6 +63,7 @@ async def new_task_input(message: Message, state: FSMContext, bot: Bot) -> None:
                 admin=message.from_user.id == user_tg_id,
             ),
         )
+    await state.clear()
 
 
 @router.callback_query(CallBackData.filter(F.button == 'cancel'))
